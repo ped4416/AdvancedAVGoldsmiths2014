@@ -1,8 +1,4 @@
-/* This is an example of how to integrate maximilain into openFrameworks,
- including using audio received for input and audio requested for output.
- 
- 
- You can copy and paste this and use it as a starting example.
+/*The main code for the pitch analysis is from Joshua Nobel's book "Interactivity 2nd Edition" and the video grabbing code is based on an example in the main openframewords Example folder as well as an example from week 8 in Advanced Audiovisual Processing.
  
  */
 
@@ -17,11 +13,12 @@ void testApp::setup(){
     ofBackground(0);
     ofSetVerticalSync(true);
     
+    //set a fade value to alter alpha of video and objects.
     fade = 200;
     
-    //setup the videoGrabber
-    camWidth 		= ofGetWidth();	// try to grab at this size.
-	camHeight 		= ofGetHeight();
+    //setup the videoGrabber size
+    camWidth = ofGetWidth();
+	camHeight = ofGetHeight();
 	
     //we can now get back a list of devices.
 	vector<ofVideoDevice> devices = vidGrabber.listDevices();
@@ -34,15 +31,16 @@ void testApp::setup(){
             cout << " - unavailable " << endl;
         }
 	}
-    
+    //set up the video grabber
 	vidGrabber.setDeviceID(0);
 	vidGrabber.setDesiredFrameRate(60);
+    
 	vidGrabber.initGrabber(camWidth,camHeight);
 	
-	videoInverted 	= new unsigned char[camWidth*camHeight*3];
+    //set up to invert the pixel data through a new unsigned char.
+	videoInverted = new unsigned char[camWidth*camHeight*3];
 	videoTexture.allocate(camWidth,camHeight, GL_RGB);
 	ofSetVerticalSync(true);
-    
     
     //set up bools for playback
     accurateOut = true;//start with this true so it mimicks the real input pitch at correct octave.
@@ -55,8 +53,8 @@ void testApp::setup(){
     initialBufferSize = 512;
     
     //set input arrays to store the incoming sound waves set to be 512 as seen above.
-    inputL = new float[initialBufferSize];
-    inputR = new float[initialBufferSize];
+    lAudioIn = new float[initialBufferSize];
+    rAudioIn = new float[initialBufferSize];
     
     //set up the FFT with a size, window size and hop size.
     //it is usually best to have the window size be the same as the fft size and the hop size should be around 1/4 of the fft size.
@@ -68,16 +66,19 @@ void testApp::setup(){
 
 //--------------------------------------------------------------
 void testApp::update(){
-
+    //advance video if needed.
 	vidGrabber.update();
 
-	
+	//if there is a new video frame get pixels
     if (vidGrabber.isFrameNew()){
+        //declare a variable to store the pixels in and get them
 		int totalPixels = camWidth*camHeight*3;
 		unsigned char * pixels = vidGrabber.getPixels();
+        //loop through all the pixels and invert them by reversing them.
 		for (int i = 0; i < totalPixels; i++){
 			videoInverted[i] = 255 - pixels[i];
 		}
+        //load the inverted pixels into a texture to be drawn to screen
 		videoTexture.loadData(videoInverted, camWidth,camHeight, GL_RGB);
 	}
 
@@ -86,13 +87,14 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw(){
-      
-    //ofSetColor(255, 255, 255, 255);
     
+    
+    //declare some local variables to keep monitoring the estimated pitches
     float estimate1 = estimatedPitch[0]/2;
     float estimate2 = estimatedPitch[1]/2;
     float estimate3 = estimatedPitch[2]/2;
     
+    //constrain the estimated pitches to keep roughtly within the screen
     if (estimate1 > ofGetWidth()){
         estimate1 = ofGetWidth();
     }
@@ -112,68 +114,66 @@ void testApp::draw(){
     if (estimate3 > ofGetHeight()){
         estimate3 = ofGetHeight();
     }
-
-    if (estimate1 > ofGetHeight()) {
-        
-    }
     
+    //to fade pixel data in videoGrabber and alter colours
     float fadeEstimate;
-    
+    //constrain the fade values
     for (int i = 0; i <3; i++){
         fadeEstimate = estimatedPitch[i]*0.5;
         if (fadeEstimate > 200) {
             fadeEstimate = 200;
         }
      
-
         ofSetColor(255, 255, 255,fadeEstimate);
     }
     
-    cout<< estimate1 << " estimate1 Value is .. , " << endl;
-    cout<< estimate2 << " estimate2 Value is .. , " << endl;
-    cout<< estimate3 << " estimate3 Value is .. , " << endl;
-
-    //videoTexture.getCoordFromPoint(300, 200);
-    //vidGrabber.draw(20,20);
-    
-    float spread = ofGetWidth() / 320.0;
+  
+    //float a variable to keep track of pixel location
+    float pixelSpread = ofGetWidth() / 320.0;
+    //declare a
     unsigned char * pixels2 = vidGrabber.getPixels();
     int nChannels = vidGrabber.getPixelsRef().getNumChannels();
     
-    
-    
-    
-  
     videoTexture.draw(0,0,camWidth+estimate1,camHeight+estimate2);
-    //ofSetHexColor(0xffffff);
-    
+
+    //The following code block takes pixels from the input video and draws circles in their place
+    //with the colour and radius altered by the pitch estimations in the for loop above.
+    //each frame the pixels from the movie image are stored in memory uncompressed
     pixels = vidGrabber.getPixels();
+    int pixelHeight = 10;//distance between pixels in height
+    int pixelWidth = 10;//distance between pixels in width
     
-    int hgap = 10;
-    int vgap = 10;
-   
-    
-    for (int i = 4; i < 320; i+=hgap){
-        for (int j = 4; j < 240; j+=vgap){
+    //loop through pixel data in current movie image(frame) and get the colour of every 10th pixel
+    for (int i = 4; i < 320; i+=pixelHeight){
+        for (int j = 4; j < 240; j+=pixelWidth){
             
             ofSetColor(fadeEstimate, fadeEstimate*2, fadeEstimate, fadeEstimate*6);
             
+            //pixel data is blocks of three values giving r,g,b for each
+            //scale a bit to suit this
             unsigned char r = pixels[(j * 320 + i)*30];
             
+            //cast pixel information to a float for use in circle radius equation
             float val = ((float)r / 255.0f);
-            
-            ofCircle(i * spread, j * spread, val * fadeEstimate/20);
+            //draw circles instead of the selected pixels.
+            ofCircle(i * pixelSpread, j * pixelSpread, val * fadeEstimate/20);
         }
     }
     
+    //The following maps all input video to grey circles that map the shape of colour varience
     // let's move through the "RGB(A)" char array
-    // using the red pixel to control the size of a circle.
+    // again we are using teh estimated pitches in fadeEstimate to adjust circle size.
     for (int i = 4; i < ofGetWidth(); i+=8){
         for (int j = 4; j < ofGetHeight(); j+=8){
+            //set colours to change with estimated pitches in very low red/ black spectrum
             ofSetColor(20, 0, 0, fadeEstimate*6);
+            //pixel data is blocks of three values giving r,g,b for each
+            //scale a bit to suit this
             unsigned char r = pixels2[(j * ofGetWidth() + i)*nChannels];
+            //cast pixel information to a float for use in circle radius equation
             float val = 1 - ((float)r / ofGetHeight());
-            ofCircle( i+spread, j+spread, val * fadeEstimate/30);
+            //draw circles instead of the selected pixels.
+            ofCircle( i+pixelSpread, j+pixelSpread, val * fadeEstimate/30);
         }
     }
     
@@ -184,9 +184,13 @@ void testApp::draw(){
                fft.magnitudesDB[i] * 8);
         
     }
-
-	   cout<< fadeEstimate << " fadeEstimate Value is .. , " << endl;
-    
+        //print out the fadeEstimate
+	    cout<< fadeEstimate << " fadeEstimate Value is .. , " << endl;
+        //print out the values of estimated frequencies.
+        cout<< estimate1 << " estimate1 Value is .. , " << endl;
+        cout<< estimate2 << " estimate2 Value is .. , " << endl;
+        cout<< estimate3 << " estimate3 Value is .. , " << endl;
+        
 }
 
 //--------------------------------------------------------------
@@ -289,14 +293,6 @@ void testApp::keyPressed(int key){
 			perfect5th = true;
             accurateOut = false;
             octaveLower = false;
-			break;
-		case 'f':
-		case 'F':
-			
-			break;
-		case 'g':
-		case 'G':
-			
 			break;
 	}
 }

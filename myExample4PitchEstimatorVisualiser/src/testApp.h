@@ -34,31 +34,33 @@ public:
     int 				camWidth;
     int 				camHeight;
     unsigned char * pixels;
-
     
-   
+    //variables to store the initial buffer size
     int initialBufferSize; /* buffer size */
     int sampleRate;
     
+    //creating an instance of soundstream.
     ofSoundStream soundStream;
     
-    //Three sine waves to additively estimate the sound received from the microphone:
     double outputs[2];
     
+    //Three sine waves to additively estimate the sound received from the microphone:
     ofxMaxiOsc sine, sine1, sine2;
     ofxMaxiOsc saw, saw1, saw2;
     
+    //variables to keep track of the three bins
     int bin_number, bin_number1, bin_number2;
     float largests[3];
     
-    //The ofxMaxiFFT will do the actual estimation of what frequency ranges the sound coming in from the microphone is loudest in:
-    
+    //The ofxMaxiFFT will do the estimation of what frequency ranges are loudest
     ofxMaxiFFT fft; ofxMaxiMix mix;
-    float *inputL, *inputR;
+    //variables to take audio in.
+    float *lAudioIn, *rAudioIn;
+    //an array float to store estimated pitches in
     float estimatedPitch[3];
-    
+    //bools to alter teh output frequency
     bool accurateOut, octaveLower, perfect5th;
-    
+    //
     int fade;
 
 };

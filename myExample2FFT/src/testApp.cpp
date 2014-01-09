@@ -1,3 +1,6 @@
+/*Basic functionality for the project taken from week 10 of the Advanced Audiovisual Processing course at Goldsmiths College 2013. http://doc.gold.ac.uk/CreativeComputing/creativecomputation/?page_id=1200Procedural
+*/
+
 #include "testApp.h"
 
 //--------------------------------------------------------------
@@ -7,7 +10,7 @@ void testApp::setup(){
 	
 	ofEnableAlphaBlending();
 	ofSetupScreen();
-	ofBackground(0, 0, 0);
+	ofBackground(0);
 	ofSetFrameRate(60);
 	
 	/* This is stuff you always need.*/
@@ -29,18 +32,22 @@ void testApp::setup(){
 	
 	/* Now you can put anything you would normally put in maximilian's 'setup' method in here. */
 	
-    //try some of your own sounds here
+    //load in 3 samples.
+    //2 are the same to create a vocoder type effect as illustrated in audioRequested..
 	sample1.load(ofToDataPath("nightQuiet.wav"));
 	sample2.load(ofToDataPath("Gods.wav"));
     sample3.load(ofToDataPath("Gods.wav"));
     
-	//has to be a power of 2 2048, 1024 or 512 is good.. any higher numbers start to smeer the output
+	//set fft size
+    // It should be a power of 2: 2048, 1024 or 512 is good..
+    // any higher numbers start to smeer the output
 	fftSize = 2048;
     //setting up a window size and a hop size. Best to have window size the same as the FFT size.
     myWindowSize = 2048;//same as FFT
+    //The hop size should be around 1/4 of the FFT size.
     myHopSize = 512;//1/4 of FFT size is best
     
-    //The hop size should be around 1/4 of the FFT size.
+    //setup for the 4 fft and inverse ones too..
 	mfft.setup(fftSize,  myWindowSize, myHopSize);//keep the ratios like this.
 	ifft.setup(fftSize,  myWindowSize, myHopSize);
 	mfft2.setup(fftSize,  myWindowSize, myHopSize);
@@ -55,12 +62,12 @@ void testApp::setup(){
     monoToneVocoder = false;
     industrialMixofGod = false;
     godsGivenUpNoNight = false;
-
 	
-	
+    //setup for a sample rate of 44100 with two channels left and right and a buffer to hold 512 sampels
 	ofxMaxiSettings::setup(sampleRate, 2, initialBufferSize);
+    //this starts the sound system by adding in number of input and ouput channels.
+    // a call to baseApp for audio and adding the declared sampleRate, Buffersize and number of buffers.
 	ofSoundStreamSetup(2,2, this, sampleRate, initialBufferSize, 4);/* Call this last ! */
-	
 	ofSetVerticalSync(true);
 }
 
@@ -71,17 +78,15 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw(){
-	//ofSetColor(255, 255, 255,255);
     
     //magnitude and phase of main Track "Gods Given Up On Him"
 	if(godsOrdinary == true){
-        
         //draw fft output scale numbers to show a decent spectogram image.
         float xinc = 900.0 / fftSize * 20.0;
         for(int i=0; i < fftSize / 2; i++) {
-            float height = mfft2.magnitudes[i] / 50.0 * 600;
+            float height = mfft2.magnitudesDB[i] / 50.0 * 600;
             ofSetColor(height, 255, height, 255);
-            //height multiplyer must be in multiples of 2 for symmerty
+            //height multiplyer must be in multiples of 2 for symmetry
             ofRect(100 + (i*xinc),350 - height,5, height*2);
         }
         //draw phases
@@ -97,7 +102,7 @@ void testApp::draw(){
         //draw fft output
         float xinc = 900.0 / fftSize * 20.0;
         for(int i=0; i < fftSize / 2; i++) {
-            float height = mfft2.magnitudes[i] / 50.0 * 600;
+            float height = mfft2.magnitudesDB[i] / 50.0 * 600;
             ofSetColor(height, 255, height, 255);
             ofRect(100 + (i*xinc),350 - height,5, height*2);
         }
@@ -109,12 +114,12 @@ void testApp::draw(){
         }
     }
     
-    //magnitude and phase is switched.
+    //magnitude and phase is switched to reverse of above
     if(industrialMixofGod == true){
         //draw fft output
         float xinc = 900.0 / fftSize * 20.0;
         for(int i=0; i < fftSize / 2; i++) {
-            float height = mfft.magnitudes[i] / 50.0 * 600;
+            float height = mfft.magnitudesDB[i] / 50.0 * 600;
             ofSetColor(height, 255, height, 255);
             ofRect(100 + (i*xinc),350 - height,5, height*2);
         }
@@ -126,6 +131,7 @@ void testApp::draw(){
         }
     }
     
+    //Magnitudes of Band Track only for vocoder effect.
     if(monoToneVocoder == true){
         //draw fft output
         float xinc = 900.0 / fftSize * 20.0;
@@ -149,7 +155,7 @@ void testApp::audioRequested 	(float * output, int bufferSize, int nChannels){
     
 	for (int i = 0; i < bufferSize; i++){
         
-        //load in the two wav files to be used in an FFT
+        //assign wave variables to load in the three wav files to be used in the FFT analysis
 		wave = sample1.play();
 		wave2 = sample2.play();
         wave3 = sample3.play();
@@ -170,14 +176,8 @@ void testApp::audioRequested 	(float * output, int bufferSize, int nChannels){
             }
             
 		}
-        
-//for version 3 no processing on required as we only want the magnitude information from mfft2.
-//        if (mfft3.process(wave3)) {
-////          //  mfft3.magsToDB();
-//		}
 
 		//inverse fft
-        
         /* Version1 */
         //allow a version where magnitudes and phases from the "Gods Given Up ON Him Track" are both
         //added meaning the sound has been recreated back into the audio domain as it came in.
@@ -205,7 +205,7 @@ void testApp::audioRequested 	(float * output, int bufferSize, int nChannels){
             rAudioOut[i] = output[i*nChannels + 1] = outputs[1]*0.6;
         }
         
-        /* Version4 */
+        /* Version3 */
         //reverse the process. Now "nightQuiet" has only its phase information and is rather lost.
         //the result is a very filtered sound coming from the "Gods Given Up On Him" track.
         if (godsGivenUpNoNight) {
@@ -218,7 +218,7 @@ void testApp::audioRequested 	(float * output, int bufferSize, int nChannels){
             rAudioOut[i] = output[i*nChannels + 1] = outputs[1]*0.3;
         }
         
-        /* version5 */
+        /* version4 */
         //taking magnitudes from the Main track "Gods given up on him"
         //this creates a monotone track expecially bass and vocals.
         
@@ -232,9 +232,6 @@ void testApp::audioRequested 	(float * output, int bufferSize, int nChannels){
             lAudioOut[i] = output[i*nChannels    ] = outputs[0];
             rAudioOut[i] = output[i*nChannels + 1] = outputs[1];
         }
-        
-        //float mix = ((mouseX + ofGetWindowPositionX()) / (float) ofGetScreenWidth());
-        //mymix.stereo((wave * mix) + ((1.0-mix) * ifftVal), outputs, 0.5);
     
 	}
 }
@@ -257,23 +254,23 @@ void testApp::audioReceived 	(float * input, int bufferSize, int nChannels){
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-    if( key == '1' ){
+    //allow the user to iterate through the various fft effects on magnitudes and phases
+    if( key == '1' ){//play a standard version much the same as original sample
         godsOrdinary = true;
         godsGivenUpNoNight = false;
         monoToneVocoder = false;
         industrialMixofGod = false;
-    } else if( key == '2' ){
+    } else if( key == '2' ){//an idustrial mix is switched on
         godsGivenUpNoNight = true;
         monoToneVocoder = false;
         industrialMixofGod = false;
         godsOrdinary = false;
-    } else if( key == '3' ){
+    } else if( key == '3' ){//blend more of the ambient night time sample in
         industrialMixofGod = true;
         monoToneVocoder = false;
         godsGivenUpNoNight = false;
         godsOrdinary = false;
-        
-    } else if( key == '4' ){
+    } else if( key == '4' ){//monotone version only magnitudes of main band track included
         monoToneVocoder = true;
         industrialMixofGod = false;
         godsGivenUpNoNight = false;
