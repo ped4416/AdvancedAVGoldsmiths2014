@@ -1,0 +1,347 @@
+/* This is an example of how to integrate maximilain into openFrameworks,
+ including using audio received for input and audio requested for output.
+ 
+ 
+ You can copy and paste this and use it as a starting example.
+ 
+ */
+
+
+#include "testApp.h"
+
+//--------------------------------------------------------------
+void testApp::setup(){
+    // some standard setup stuff
+    ofEnableAlphaBlending();
+    ofSetupScreen();
+    ofBackground(0);
+    ofSetVerticalSync(true);
+    
+    fade = 200;
+    
+    //setup the videoGrabber
+    camWidth 		= ofGetWidth();	// try to grab at this size.
+	camHeight 		= ofGetHeight();
+	
+    //we can now get back a list of devices.
+	vector<ofVideoDevice> devices = vidGrabber.listDevices();
+	
+    for(int i = 0; i < devices.size(); i++){
+		cout << devices[i].id << ": " << devices[i].deviceName;
+        if( devices[i].bAvailable ){
+            cout << endl;
+        }else{
+            cout << " - unavailable " << endl;
+        }
+	}
+    
+	vidGrabber.setDeviceID(0);
+	vidGrabber.setDesiredFrameRate(60);
+	vidGrabber.initGrabber(camWidth,camHeight);
+	
+	videoInverted 	= new unsigned char[camWidth*camHeight*3];
+	videoTexture.allocate(camWidth,camHeight, GL_RGB);
+	ofSetVerticalSync(true);
+    
+    
+    //set up bools for playback
+    accurateOut = true;//start with this true so it mimicks the real input pitch at correct octave.
+    octaveLower = false;
+    perfect5th = false;
+    
+    //setup the sampleRate to a standard CD 44.1Khz
+    sampleRate = 44100;
+    //the buffer is set up and must be filled with sound
+    initialBufferSize = 512;
+    
+    //set input arrays to store the incoming sound waves set to be 512 as seen above.
+    inputL = new float[initialBufferSize];
+    inputR = new float[initialBufferSize];
+    
+    //set up the FFT with a size, window size and hop size.
+    //it is usually best to have the window size be the same as the fft size and the hop size should be around 1/4 of the fft size.
+    //the fft size should also be a power of 2.
+    fft.setup(16384, 1024, 512);//16384 was set by Joshua Nobel
+    soundStream.setup(this, 2, 2, 44100, initialBufferSize, 4); estimatedPitch[0] = estimatedPitch[1] = estimatedPitch[2] = 0.f;
+    
+}
+
+//--------------------------------------------------------------
+void testApp::update(){
+
+	vidGrabber.update();
+
+	
+    if (vidGrabber.isFrameNew()){
+		int totalPixels = camWidth*camHeight*3;
+		unsigned char * pixels = vidGrabber.getPixels();
+		for (int i = 0; i < totalPixels; i++){
+			videoInverted[i] = 255 - pixels[i];
+		}
+		videoTexture.loadData(videoInverted, camWidth,camHeight, GL_RGB);
+	}
+
+    
+}
+
+//--------------------------------------------------------------
+void testApp::draw(){
+      
+    //ofSetColor(255, 255, 255, 255);
+    
+    float estimate1 = estimatedPitch[0]/2;
+    float estimate2 = estimatedPitch[1]/2;
+    float estimate3 = estimatedPitch[2]/2;
+    
+    if (estimate1 > ofGetWidth()){
+        estimate1 = ofGetWidth();
+    }
+    if (estimate1 > ofGetHeight()){
+        estimate1 = ofGetHeight();
+    }
+    if (estimate2 > ofGetWidth()){
+        estimate2 = ofGetWidth();
+    }
+    if (estimate2 > ofGetHeight()){
+        estimate2 = ofGetHeight();
+    }
+
+    if (estimate3 > ofGetWidth()){
+        estimate3 = ofGetWidth();
+    }
+    if (estimate3 > ofGetHeight()){
+        estimate3 = ofGetHeight();
+    }
+
+    if (estimate1 > ofGetHeight()) {
+        
+    }
+    
+    float fadeEstimate;
+    
+    for (int i = 0; i <3; i++){
+        fadeEstimate = estimatedPitch[i]*0.5;
+        if (fadeEstimate > 200) {
+            fadeEstimate = 200;
+        }
+     
+
+        ofSetColor(255, 255, 255,fadeEstimate);
+    }
+    
+    cout<< estimate1 << " estimate1 Value is .. , " << endl;
+    cout<< estimate2 << " estimate2 Value is .. , " << endl;
+    cout<< estimate3 << " estimate3 Value is .. , " << endl;
+
+    //videoTexture.getCoordFromPoint(300, 200);
+    //vidGrabber.draw(20,20);
+    
+    float spread = ofGetWidth() / 320.0;
+    unsigned char * pixels2 = vidGrabber.getPixels();
+    int nChannels = vidGrabber.getPixelsRef().getNumChannels();
+    
+    
+    
+    
+  
+    videoTexture.draw(0,0,camWidth+estimate1,camHeight+estimate2);
+    //ofSetHexColor(0xffffff);
+    
+    pixels = vidGrabber.getPixels();
+    
+    int hgap = 10;
+    int vgap = 10;
+   
+    
+    for (int i = 4; i < 320; i+=hgap){
+        for (int j = 4; j < 240; j+=vgap){
+            
+            ofSetColor(fadeEstimate, fadeEstimate*2, fadeEstimate, fadeEstimate*6);
+            
+            unsigned char r = pixels[(j * 320 + i)*30];
+            
+            float val = ((float)r / 255.0f);
+            
+            ofCircle(i * spread, j * spread, val * fadeEstimate/20);
+        }
+    }
+    
+    // let's move through the "RGB(A)" char array
+    // using the red pixel to control the size of a circle.
+    for (int i = 4; i < ofGetWidth(); i+=8){
+        for (int j = 4; j < ofGetHeight(); j+=8){
+            ofSetColor(20, 0, 0, fadeEstimate*6);
+            unsigned char r = pixels2[(j * ofGetWidth() + i)*nChannels];
+            float val = 1 - ((float)r / ofGetHeight());
+            ofCircle( i+spread, j+spread, val * fadeEstimate/30);
+        }
+    }
+    
+    //draw the input magnitudes last
+    for(int i = 0; i < fft.bins; i++) {
+        ofSetColor(255, 255, 255,255);
+        ofRect(i * 11, ofGetHeight()/2 - (fft.magnitudesDB[i] * 4), 11,
+               fft.magnitudesDB[i] * 8);
+        
+    }
+
+	   cout<< fadeEstimate << " fadeEstimate Value is .. , " << endl;
+    
+}
+
+//--------------------------------------------------------------
+void testApp::audioOut 	(float * output, int bufferSize, int nChannels){
+	
+	for (int i = 0; i < bufferSize; i++) {
+        double wave, originalWave, octaveWave, fifthWave;
+        //add three signals together to give a unified output.
+        //must use abs to set an absolute value of the resulting waves.
+        //Joshua Nobels orgional example gave an output that was an octave too low but was relativly accurate and medium notes.
+        //I have created an if block to play the output at his original or at the "correct" pitch by multiplying the outputs by 2 initiallly.
+        
+                if (accurateOut == true){
+                    //create a sterio mix of the combined waves using MaxiMix object
+                    //taking an input of the wave a simple array for sterio Left and Right [2], and a double x for volume
+                    originalWave = sine.sinebuf4(abs(estimatedPitch[0])*2) + sine1.sinebuf4(abs(estimatedPitch[1])*2) + sine1.sinebuf4(abs(estimatedPitch[2])*2);
+                mix.stereo(originalWave/3.f, outputs, 0.5);
+                } else if (octaveLower == true){
+                    //create a sterio mix of the combined waves using MaxiMix object
+                    //taking an input of the wave a simple array for sterio Left and Right [2], and a double x for volume
+                    octaveWave = sine.sinebuf4(abs(estimatedPitch[0])) + sine1.sinebuf4(abs(estimatedPitch[1])) + sine1.sinebuf4(abs(estimatedPitch[2]));
+
+                    mix.stereo(octaveWave/3.f, outputs, 0.5);
+        
+                } else if (perfect5th == true){
+                    fifthWave = sine.sinebuf4(abs(estimatedPitch[0])*0.5) + sine1.sinebuf4(abs(estimatedPitch[1])*0.5) + sine1.sinebuf4(abs(estimatedPitch[2])*0.5);
+                    mix.stereo(fifthWave/3.f, outputs, 0.5);
+                }
+        
+     
+		output[i*nChannels    ] = outputs[0]; /* You may end up with lots of outputs. add them here */
+		output[i*nChannels + 1] = outputs[1];
+        
+	}
+	
+}
+
+//--------------------------------------------------------------
+void testApp::audioIn 	(float * input, int bufferSize, int nChannels){
+	
+	double lIn, rIn;
+    //Here, the input data is sent to the FFT, which figures out how loud each different magnitude in the sound is, using the magsToDB() method. Then we look through each ÒloudnessÓ registered in the magnitudesDB array and determine what the loudest three bins in that array are, so that they can be used to create sine waves:
+    int i;//declare i here so it can be used by both following for loops..
+    for (i = 0; i < bufferSize; i++){
+        //left input
+        lIn = input[i*2]; if(fft.process(lIn)) {
+            fft.magsToDB(); }
+        //right input
+        rIn = input[i*2 + 1]; if(fft.process(rIn)) {
+            fft.magsToDB(); }
+    }
+    
+    bin_number = bin_number1 = bin_number2 = 0;//intitalise the bins to 0
+    largests[0] = largests[1] = largests[2] = 0.f;//intialise the magnitude arrays to 0
+    for (i = 0; i < fft.bins; i++) {
+        if(abs(fft.magnitudesDB[i]) > largests[0]) {
+            largests[2] = largests[1];
+            largests[1] = largests[0];
+            largests[0] = abs(fft.magnitudesDB[i]);
+            bin_number2 = bin_number1;
+            bin_number1 = bin_number;
+            bin_number = i;
+        }
+    }
+    
+    //The 12.0 here simply seemed like a nice number to determine whether there was adedequate volume in that bin:
+    if(largests[0] > 12.0)
+        estimatedPitch[0] = ( (float) bin_number / fft.bins) * (sampleRate * 0.5);
+    else
+        estimatedPitch[0] = 0.f;
+    if(largests[1] > 12.0)
+        estimatedPitch[1] = ( (float) bin_number1 / fft.bins) * (sampleRate * 0.5);
+    else
+        estimatedPitch[1] = 0.f;
+    if(largests[2] > 12.0)
+        estimatedPitch[2] = ( (float) bin_number2 / fft.bins) * (sampleRate * 0.5);
+    else
+        estimatedPitch[2] = 0.f;
+	
+}
+
+
+//--------------------------------------------------------------
+void testApp::keyPressed(int key){
+    switch (key) {
+		case 'a':
+		case 'A':
+            accurateOut = true;
+            perfect5th = false;
+            octaveLower = false;
+			break;
+		case 's':
+		case 'S':
+			octaveLower = true;
+            perfect5th = false;
+            accurateOut = false;
+			break;
+		case 'd':
+		case 'D':
+			perfect5th = true;
+            accurateOut = false;
+            octaveLower = false;
+			break;
+		case 'f':
+		case 'F':
+			
+			break;
+		case 'g':
+		case 'G':
+			
+			break;
+	}
+}
+
+//--------------------------------------------------------------
+void testApp::keyReleased(int key){
+
+}
+
+//--------------------------------------------------------------
+void testApp::mouseMoved(int x, int y){
+ 
+    
+}
+
+//--------------------------------------------------------------
+void testApp::mouseDragged(int x, int y, int button){
+    
+
+}
+
+//--------------------------------------------------------------
+void testApp::mousePressed(int x, int y, int button){
+
+    
+    //camera.rotateAround(1, ofVec3f(1,0,0), ofVec3f(1,0,0));
+    //camera.begin();
+}
+
+//--------------------------------------------------------------
+void testApp::mouseReleased(int x, int y, int button){
+
+}
+
+//--------------------------------------------------------------
+void testApp::windowResized(int w, int h){
+
+}
+
+//--------------------------------------------------------------
+void testApp::gotMessage(ofMessage msg){
+
+}
+
+//--------------------------------------------------------------
+void testApp::dragEvent(ofDragInfo dragInfo){ 
+
+}
