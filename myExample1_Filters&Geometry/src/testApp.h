@@ -1,3 +1,10 @@
+/*Basic functionality for the project taken from week 8 of the Advanced Audiovisual Processing course at Goldsmiths College 2013. http://doc.gold.ac.uk/CreativeComputing/creativecomputation/?page_id=1200Procedural
+ 
+ Three filters are set up to manipulate the drawing of geometric shapes and their positions.
+ Addition of lighting and editing of filter settings have been completed. Code is commented throughout to make this clear.
+ 
+ */
+
 #pragma once
 
 #include "ofMain.h"
@@ -62,8 +69,6 @@ public:
    
     //declare some lights
     ofLight light;
-    ofLight spot;
-    
+  
 
-    
 };

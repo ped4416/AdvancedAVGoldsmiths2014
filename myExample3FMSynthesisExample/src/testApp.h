@@ -1,3 +1,6 @@
+/* The basic formula for the FM synthesis was taken from the Maximilian example folder and also the envelope function created has used parts of an example from the same library.
+ */
+
 #pragma once
 
 #include "ofMain.h"

@@ -5,34 +5,34 @@
 	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>43A2861C-A0DA-45A9-AC16-0C06D12DE2F3</string>
+	<string>2CAAE665-3A30-44A8-ADCC-518742BCCF8D</string>
 	<key>IDESourceControlProjectName</key>
 	<string>SynthesisFM</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>CACE8FCA-DA4F-4333-8F70-71BA381B5607</key>
-		<string>git://github.com/ped4416/AdvancedAVGoldsmiths2014</string>
+		<key>07685764-18B6-4299-A118-E2109DE8D983</key>
+		<string>https://github.com/ped4416/AdvancedAVGoldsmiths2014.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>myExample3FMSynthesisExample/SynthesisFM.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>CACE8FCA-DA4F-4333-8F70-71BA381B5607</key>
+		<key>07685764-18B6-4299-A118-E2109DE8D983</key>
 		<string>../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>git://github.com/ped4416/AdvancedAVGoldsmiths2014</string>
+	<string>https://github.com/ped4416/AdvancedAVGoldsmiths2014.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>110</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>CACE8FCA-DA4F-4333-8F70-71BA381B5607</string>
+	<string>07685764-18B6-4299-A118-E2109DE8D983</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>CACE8FCA-DA4F-4333-8F70-71BA381B5607</string>
+			<string>07685764-18B6-4299-A118-E2109DE8D983</string>
 			<key>IDESourceControlWCCName</key>
 			<string>AdvancedAVGoldsmiths2014</string>
 		</dict>

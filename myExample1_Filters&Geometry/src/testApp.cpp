@@ -61,7 +61,6 @@ void testApp::draw(){
     
     ofBackground(0); // create a black background
     light.enable();//OPENGL 3D world a light gives a sense of depth.
-    spot.enable();//enable a spot light
     
     //alter the specular qualites of the light
     light.setSpecularColor(ofColor(0, 255, 255, 200));
@@ -77,12 +76,6 @@ void testApp::draw(){
     lowValSmoothed = lowValSmoothing.lopass(lowVal, loopEnd);//constrain the frequency.
     midValSmoothed = midValSmoothing.lopass(midVal, loopEnd);
     highValSmoothed = highValSmoothing.lopass(highVal, loopEnd);
-    
-    //a spot light is set to flicker position with the mid filter on X and high on Y position.
-    //only shines on spheres
-    spot.setSpotConcentration(abs(midVal*5000)+10);
-    spot.setSpotlightCutOff(abs(midVal)+10);
-    spot.setPosition(ofGetWidth()/2+midVal*100, ofGetHeight()/2+highVal*500, 500);
 
     if (sphereShow == true) {
         //rotate spheres relative to the bass, mid and treble in the sound seperated

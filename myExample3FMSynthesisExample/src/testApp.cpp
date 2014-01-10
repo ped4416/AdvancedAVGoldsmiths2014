@@ -6,7 +6,7 @@
 //--------------------------------------------------------------
 void testApp::setup(){
     
-    //load a font to write to screen
+    //load fonts to write to screen
     newFont.loadFont("Batang.ttf", 40, true, true, true);
     smallFont.loadFont("Batang.ttf", 12, true, true, true);
     //setup bools for single modulators

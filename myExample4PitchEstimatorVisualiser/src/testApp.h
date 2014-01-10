@@ -1,3 +1,6 @@
+/*The main code for the pitch analysis is from Joshua Nobel's book "Interactivity 2nd Edition" and the video grabbing code is based on an example in the main openframewords Example folder as well as an example from week 8 in Advanced Audiovisual Processing.
+ 
+ */
 #pragma once
 
 #include "ofMain.h"
@@ -46,22 +49,22 @@ public:
     
     //Three sine waves to additively estimate the sound received from the microphone:
     ofxMaxiOsc sine, sine1, sine2;
-    ofxMaxiOsc saw, saw1, saw2;
     
     //variables to keep track of the three bins
     int bin_number, bin_number1, bin_number2;
     float largests[3];
     
     //The ofxMaxiFFT will do the estimation of what frequency ranges are loudest
-    ofxMaxiFFT fft; ofxMaxiMix mix;
+    ofxMaxiFFT fft;
+    ofxMaxiMix mix;
+    
     //variables to take audio in.
     float *lAudioIn, *rAudioIn;
     //an array float to store estimated pitches in
     float estimatedPitch[3];
     //bools to alter teh output frequency
     bool accurateOut, octaveLower, perfect5th;
-    //
-    int fade;
+  
 
 };
    

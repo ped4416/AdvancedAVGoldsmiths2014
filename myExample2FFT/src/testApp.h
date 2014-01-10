@@ -1,3 +1,6 @@
+/*Basic functionality for the project taken from week 10 of the Advanced Audiovisual Processing course at Goldsmiths College 2013. http://doc.gold.ac.uk/CreativeComputing/creativecomputation/?page_id=1200Procedural
+ */
+
 #pragma once
 
 #include "ofMain.h"

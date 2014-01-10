@@ -13,9 +13,6 @@ void testApp::setup(){
     ofBackground(0);
     ofSetVerticalSync(true);
     
-    //set a fade value to alter alpha of video and objects.
-    fade = 200;
-    
     //setup the videoGrabber size
     camWidth = ofGetWidth();
 	camHeight = ofGetHeight();
@@ -201,7 +198,7 @@ void testApp::audioOut 	(float * output, int bufferSize, int nChannels){
         //add three signals together to give a unified output.
         //must use abs to set an absolute value of the resulting waves.
         //Joshua Nobels orgional example gave an output that was an octave too low but was relativly accurate and medium notes.
-        //I have created an if block to play the output at his original or at the "correct" pitch by multiplying the outputs by 2 initiallly.
+        //I have created an if block to play the output at his original or at the "correct" pitch by multiplying the outputs by 2 initially.
         
                 if (accurateOut == true){
                     //create a sterio mix of the combined waves using MaxiMix object
@@ -215,10 +212,8 @@ void testApp::audioOut 	(float * output, int bufferSize, int nChannels){
 
                     mix.stereo(octaveWave/3.f, outputs, 0.5);
         
-                } else if (perfect5th == true){
-                    fifthWave = sine.sinebuf4(abs(estimatedPitch[0])*0.5) + sine1.sinebuf4(abs(estimatedPitch[1])*0.5) + sine1.sinebuf4(abs(estimatedPitch[2])*0.5);
-                    mix.stereo(fifthWave/3.f, outputs, 0.5);
                 }
+        
         
      
 		output[i*nChannels    ] = outputs[0]; /* You may end up with lots of outputs. add them here */
@@ -275,25 +270,18 @@ void testApp::audioIn 	(float * input, int bufferSize, int nChannels){
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
+    //switch between a and s to hear the different outputs.
     switch (key) {
-		case 'a':
-		case 'A':
+        case 'a':
+        case 'A':
             accurateOut = true;
-            perfect5th = false;
             octaveLower = false;
-			break;
-		case 's':
-		case 'S':
-			octaveLower = true;
-            perfect5th = false;
+            break;
+        case 's':
+        case 'S':
             accurateOut = false;
-			break;
-		case 'd':
-		case 'D':
-			perfect5th = true;
-            accurateOut = false;
-            octaveLower = false;
-			break;
+            octaveLower = true;
+            break;
 	}
 }
 
